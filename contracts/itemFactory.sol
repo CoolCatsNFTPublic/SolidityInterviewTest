@@ -6,10 +6,9 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract ItemFactory is ERC1155SupplyCC, AccessControl {
 
-    /// @dev Track last time a claim was made for a specific pet
-    mapping(uint256 => uint256) public _lastUpdate;
-
     address public _milkContractAddress;
+    
+    uint256 duration = 1 days;
 
     /// @dev Rarity rolls
     uint16 public _commonRoll = 60;
@@ -21,16 +20,29 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
     enum ERarity {
         COMMON, UNCOMMON, RARE, EPIC, LEGENDARY
     }
-
+    
+    /// @dev Track last time a claim was made for a specific pet
     /// @dev rewardType => (rewardRarity => data)
+    
+    mapping(uint256 => uint256) public _lastUpdate;
     mapping(uint256 => mapping(uint256 => bytes)) _rewardMapping;
+    
+    event LogDailyClaim(address _Claimer,uint256 rewardType, uint256 rewardRarity, bytes rewardData)
 
-    constructor(string memory uri, address milkContractAddress) {
+    constructor(address milkContractAddress) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _milkContractAddress = milkContractAddress;
     }
-
-    function claim(address claimer, uint256 entropy) external {
+    
+    //making internal function reduces gas fees for the users
+    function claim(address _claimer, uint256 _entropy,uint256 _petTokenId) external{
+    claim_internal(_claimer,_entropy)
+    }
+    
+     
+    function claim_internal(address claimer, uint256 entropy, uint256 petTokenId) internal {
+    
+    require(block.timestamp - _lastUpdate[petTokenId] >= duration);
 
         // generate a single random number and bit shift as needed
         uint256 randomNum = randomNum(entropy);
