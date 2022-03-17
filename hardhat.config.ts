@@ -7,6 +7,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-etherscan";
 import "solidity-coverage";
+import "hardhat-gas-reporter";
 
 const INFURA_API_KEY = process.env.INFURA_API_KEY || "";
 const RINKEBY_PRIVATE_KEY =
@@ -18,6 +19,12 @@ const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   solidity: {
     compilers: [{ version: "0.7.6", settings: {} }],
+  },
+  gasReporter: {
+    enabled: true,
+    currency: "USD",
+    gasPrice: 30,
+    coinmarketcap: process.env.COINMARKETCAP_KEY,
   },
   networks: {
     hardhat: {},
