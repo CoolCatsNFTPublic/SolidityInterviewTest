@@ -20,9 +20,10 @@ contract Milk is ERC20, AccessControl {
 
     /// @notice called when grant the role to user
     /// @dev Should be callable only by admin
-    /// @param user user address for whom deposit is being done
-    function grant(address user) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setupRole(DEPOSITOR_ROLE, user);
+    /// @param role which role to give to this user
+    /// @param user user address for whom get this role
+    function grant(bytes32 role, address user) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setupRole(role, user);
     }
 
     /// @notice called when token is deposited on root chain

@@ -4,12 +4,14 @@ pragma solidity ^0.8.0;
 import "./common/ERC1155SupplyCC.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-interface Milk {}
+interface Milk {
+    function gameMint(address, uint256) external;
+}
 
 contract ItemFactory is ERC1155SupplyCC, AccessControl {
 
     /// @dev Track last time a claim was made for a specific pet
-    mapping(uint256 => uint256) public _lastUpdate;
+    mapping(address => uint256) public _lastUpdate;
 
     address public _milkContractAddress;
 
@@ -19,13 +21,14 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
     uint16 public _rareRoll = 90;
     uint16 public _epicRoll = 98;
     uint16 public _legendaryRoll = 100;
+    uint16 public _maxRarityRoll;
 
     enum ERarity {
         COMMON, UNCOMMON, RARE, EPIC, LEGENDARY
     }
 
     enum EType {
-        BOX, MILK
+        MILK, BOX
     }
 
     /// @dev rewardType => (rewardRarity => data)
@@ -39,6 +42,9 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
     }
 
     function claim(address claimer, uint256 entropy) external {
+        require(_lastUpdate[claimer] <= block.timestamp - 1 days, "An address can only claim once per day");
+        // Claims are specific to the that pet, not the claimer or a combination of claimer and pet
+        _lastUpdate[claimer] = block.timestamp;
 
         // generate a single random number and bit shift as needed
         uint256 randNum = randomNum(entropy);
@@ -100,8 +106,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
 
         emit LogDailyClaim(claimer, rewardType, rewardRarity, rewardData);
 
-        // Claims are specific to the that pet, not the claimer or a combination of claimer and pet
-        _lastUpdate[petTokenId] = block.timestamp;
+
     }
 
     function randomNum(uint entropy) internal returns (uint256) {
