@@ -3,5 +3,6 @@ cache/
 build/
 typechain/
 artifacts/
+typechain-types/
 coverage*
 .env

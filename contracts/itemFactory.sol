@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "./common/ERC1155SupplyCC.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -36,7 +36,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
 
     event LogDailyClaim(address claimer, uint256 rewardType, uint256 rewardRarity, bytes rewardData);
 
-    constructor(string memory uri, address milkContractAddress) {
+    constructor(string memory uri, address milkContractAddress) ERC1155(uri) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _milkContractAddress = milkContractAddress;
     }
@@ -109,7 +109,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
 
     }
 
-    function randomNum(uint entropy) internal returns (uint256) {
+    function randomNum(uint entropy) internal view returns (uint256) {
         return uint256(keccak256(abi.encode(block.timestamp, block.difficulty, entropy)));
     }
 
@@ -146,9 +146,13 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
     }
 
     function setReward(uint256 rewardType, uint256 rewardRarity, bytes calldata rewardData) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        (uint256 min, uint256 max, uint256[] memory ids) = abi.decode(
+        abi.decode(
             rewardData, (uint256, uint256, uint256[])
         );
         _rewardMapping[rewardType][rewardRarity] = rewardData;
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, AccessControl) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 }
