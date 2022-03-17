@@ -4,5 +4,6 @@ build/
 typechain/
 artifacts/
 typechain-types/
+deployments/
 coverage*
 .env
