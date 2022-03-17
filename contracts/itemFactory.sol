@@ -36,7 +36,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
     }
 
     /// @dev rewardType => (rewardRarity => data)
-    mapping(uint256 => mapping(uint256 => bytes)) _rewardMapping;
+    mapping(uint256 => mapping(uint256 => bytes)) public _rewardMapping;
 
     event LogDailyClaim(
         address claimer,
@@ -59,7 +59,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
     function claim(address claimer, uint256 entropy) external {
         require(
             _lastUpdate[claimer] <= block.timestamp - 1 days,
-            "An address can only claim once per day"
+            "Claim once per day"
         );
         // Claims are specific to the that pet, not the claimer or a combination of claimer and pet
         _lastUpdate[claimer] = block.timestamp;

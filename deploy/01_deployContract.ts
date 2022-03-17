@@ -19,7 +19,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     from: deployer,
     log: true,
     args: [
-      ItemFactory.address,
+      "Milk", "Milk", ItemFactory.address,
     ],
   });
 
