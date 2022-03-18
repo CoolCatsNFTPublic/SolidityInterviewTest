@@ -32,6 +32,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
 
     enum EType {
         MILK,
+        ITEMS,
         BOX
     }
 
@@ -96,7 +97,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
         else {
             // This will pick a random number between 0 and 1 inc.
             // MILK or ITEMS.
-            rewardType = randomNum(entropy) % (uint256(EType.BOX) + 1);
+            rewardType = randomNum(entropy) % uint256(EType.BOX);
 
             // convert the reward mapping data to min and max
             (uint256 min, uint256 max, uint256[] memory ids) = abi.decode(

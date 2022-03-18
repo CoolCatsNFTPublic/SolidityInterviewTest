@@ -10,6 +10,7 @@ import {
 } from "../typechain-types";
 import hre from "hardhat";
 import Web3 from "web3";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 chai.use(solidity);
 const { expect } = chai;
@@ -18,7 +19,11 @@ describe("Token", () => {
   let web3 = new Web3(<any>hre.network.provider);
   let itemFactory: ItemFactory;
   let milk: Milk;
-  let deployer: any, addr1: any;
+  let deployer: SignerWithAddress, addr1: SignerWithAddress;
+  let DEPOSITOR_ROLE: string,
+    CONTRACT_ROLE: string,
+    MASTER_ROLE: string,
+    DEFAULT_ADMIN_ROLE = ethers.utils.hexZeroPad("0x00", 32);
 
   beforeEach(async () => {
     [deployer, addr1] = await ethers.getSigners();
@@ -26,6 +31,15 @@ describe("Token", () => {
     itemFactory = await ItemFactory_C.deploy(deployer.address);
     const Milk_C = new Milk__factory(deployer);
     milk = await Milk_C.deploy("Milk", "Milk", itemFactory.address);
+    DEPOSITOR_ROLE = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("DEPOSITOR_ROLE")
+    );
+    CONTRACT_ROLE = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("CONTRACT_ROLE")
+    );
+    MASTER_ROLE = ethers.utils.keccak256(
+      ethers.utils.toUtf8Bytes("MASTER_ROLE")
+    );
   });
 
   // You can nest describe calls to create subsections.
@@ -41,17 +55,11 @@ describe("Token", () => {
       // This test expects the owner variable stored in the contract to be equal
       // to our Signer's owner.
       expect(
-        await itemFactory.hasRole(
-          ethers.utils.hexZeroPad("0x00", 32),
-          deployer.address
-        )
+        await itemFactory.hasRole(DEFAULT_ADMIN_ROLE, deployer.address)
       ).to.equal(true);
-      expect(
-        await milk.hasRole(
-          ethers.utils.hexZeroPad("0x00", 32),
-          deployer.address
-        )
-      ).to.equal(true);
+      expect(await milk.hasRole(DEFAULT_ADMIN_ROLE, deployer.address)).to.equal(
+        true
+      );
       expect(
         await milk.hasRole(keccak256("CONTRACT_ROLE"), itemFactory.address)
       ).to.equal(true);
@@ -97,6 +105,7 @@ describe("Token", () => {
     it("setReward is working with deployer", async () => {
       //  NOTE : keccak256 does not give accurate result for combination of
       //         two or more parameters use web3.utils.soliditySha3 instead
+      //         also can use ethers.utils.defaultAbiCoder
       let reward = web3.eth.abi.encodeParameters(
         ["uint256", "uint256", "uint256[]"],
         [20, 80, [2, 3, 4]]
@@ -219,19 +228,13 @@ describe("Token", () => {
       await expect(
         itemFactory.connect(addr1).setMilkContractAddress(milk.address)
       ).to.be.revertedWith(
-        `AccessControl: account ${addr1.address.toLowerCase()} is missing role ${ethers.utils.hexZeroPad(
-          "0x00",
-          32
-        )}`
+        `AccessControl: account ${addr1.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
       );
 
       await expect(
         itemFactory.connect(addr1).setRarityRolls(80, 100, 120, 140, 160, 180)
       ).to.be.revertedWith(
-        `AccessControl: account ${addr1.address.toLowerCase()} is missing role ${ethers.utils.hexZeroPad(
-          "0x00",
-          32
-        )}`
+        `AccessControl: account ${addr1.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
       );
 
       let reward = web3.eth.abi.encodeParameters(
@@ -241,34 +244,40 @@ describe("Token", () => {
       await expect(
         itemFactory.connect(addr1).setReward(0, 0, reward)
       ).to.be.revertedWith(
-        `AccessControl: account ${addr1.address.toLowerCase()} is missing role ${ethers.utils.hexZeroPad(
-          "0x00",
-          32
-        )}`
+        `AccessControl: account ${addr1.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
       );
     });
   });
 
   describe("Milk", () => {
+    it("grantRole function check", async () => {
+      await milk.grantRole(MASTER_ROLE, deployer.address);
+    });
+
+    it("grantRole function restriction", async () => {
+      await expect(
+        milk.connect(addr1).grantRole(MASTER_ROLE, addr1.address)
+      ).to.be.revertedWith(
+        `AccessControl: account ${addr1.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
+      );
+    });
+
     it("mint function check", async () => {
+      await milk.grantRole(MASTER_ROLE, deployer.address);
       await milk.mint(addr1.address, 100);
       expect(await milk.balanceOf(addr1.address)).to.be.equal(100);
     });
 
     it("withdraw function check", async () => {
+      await milk.grantRole(MASTER_ROLE, deployer.address);
       await milk.mint(addr1.address, 100);
       await milk.connect(addr1).withdraw(20);
       expect(await milk.balanceOf(addr1.address)).to.be.equal(80);
     });
 
-    it("mint should be reverted by non deployer", async () => {
-      await expect(
-        milk.connect(addr1).mint(addr1.address, 100)
-      ).to.be.revertedWith(
-        `AccessControl: account ${addr1.address.toLowerCase()} is missing role ${ethers.utils.hexZeroPad(
-          "0x00",
-          32
-        )}`
+    it("mint should be reverted by non master", async () => {
+      await expect(milk.mint(addr1.address, 100)).to.be.revertedWith(
+        `AccessControl: account ${deployer.address.toLowerCase()} is missing role ${MASTER_ROLE}`
       );
     });
 

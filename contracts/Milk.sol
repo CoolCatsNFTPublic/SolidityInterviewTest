@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 contract Milk is ERC20, AccessControl {
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
     bytes32 public constant CONTRACT_ROLE = keccak256("CONTRACT_ROLE");
+    bytes32 public constant MASTER_ROLE = keccak256("MASTER_ROLE");
 
     constructor(
         string memory name,
@@ -107,7 +108,7 @@ contract Milk is ERC20, AccessControl {
     /// @param amount amount of token to mint in wei
     function mint(address account, uint256 amount)
         public
-        onlyRole(DEFAULT_ADMIN_ROLE)
+        onlyRole(MASTER_ROLE)
     {
         _mint(account, amount);
     }
