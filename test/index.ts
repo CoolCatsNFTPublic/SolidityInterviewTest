@@ -1,16 +1,4 @@
 import { ethers } from "hardhat";
-import {
-  BaseContract,
-  BigNumber,
-  BigNumberish,
-  BytesLike,
-  CallOverrides,
-  ContractTransaction,
-  Overrides,
-  PopulatedTransaction,
-  Signer,
-  utils,
-} from "ethers";
 import chai from "chai";
 import { solidity } from "ethereum-waffle";
 const keccak256 = require("keccak256");
@@ -143,23 +131,23 @@ describe("Token", () => {
         );
         let reward5 = web3.eth.abi.encodeParameters(
           ["uint256", "uint256", "uint256[]"],
-          [20, 480, [3, 7, 9]]
+          [2, 4, [3, 7, 9]]
         );
         let reward6 = web3.eth.abi.encodeParameters(
           ["uint256", "uint256", "uint256[]"],
-          [220, 580, [4, 6, 8]]
+          [2, 5, [4, 6, 8]]
         );
         let reward7 = web3.eth.abi.encodeParameters(
           ["uint256", "uint256", "uint256[]"],
-          [120, 680, [10, 17, 24]]
+          [3, 6, [10, 17, 24]]
         );
         let reward8 = web3.eth.abi.encodeParameters(
           ["uint256", "uint256", "uint256[]"],
-          [220, 880, [11, 22, 44]]
+          [1, 7, [11, 22, 44]]
         );
         let reward9 = web3.eth.abi.encodeParameters(
           ["uint256", "uint256", "uint256[]"],
-          [20, 980, [24, 36, 48]]
+          [2, 9, [24, 36, 48]]
         );
 
         await itemFactory.setReward(0, 0, reward0);
@@ -173,11 +161,35 @@ describe("Token", () => {
         await itemFactory.setReward(4, 3, reward8);
         await itemFactory.setReward(5, 4, reward9);
       });
-
       it("claim function should work", async () => {
-        await itemFactory.claim(deployer.address, 1111);
+        let tx = await itemFactory.claim(deployer.address, 1114);
+        expect(tx).to.emit(itemFactory, "LogDailyClaim");
+        const receipt = await ethers.provider.getTransactionReceipt(tx.hash);
+        const data = receipt.logs[1].data;
+        const topics = receipt.logs[1].topics;
+        const interf = new ethers.utils.Interface([
+          "event LogDailyClaim(address claimer, uint256 rewardType, uint256 rewardRarity, bytes rewardData)",
+        ]);
+        const event = interf.decodeEventLog("LogDailyClaim", data, topics);
+        expect(event[0]).to.be.equal(deployer.address);
+        // console.log(event[1], event[2]);
+        if (event[1] == 0) {
+          let amount = web3.eth.abi.decodeParameters(["uint256"], event[3]);
+          // console.log(amount);
+          expect(await milk.balanceOf(deployer.address)).to.be.equal(
+            amount["0"]
+          );
+        } else {
+          let amount = web3.eth.abi.decodeParameters(
+            ["uint256", "uint256"],
+            event[3]
+          );
+          // console.log(amount);
+          expect(await itemFactory.totalSupply(amount["0"])).to.be.equal(
+            amount["1"]
+          );
+        }
       });
-
       it("claim function can not be called twice a day", async () => {
         await itemFactory.claim(deployer.address, 1111);
         await expect(
@@ -187,9 +199,10 @@ describe("Token", () => {
 
       it("claim function can be called after a day", async () => {
         await itemFactory.claim(deployer.address, 1111);
-        await expect(
-          itemFactory.claim(deployer.address, 1111)
-        ).to.be.revertedWith("Claim once per day");
+        // Time manipulation
+        await ethers.provider.send("evm_increaseTime", [86400]);
+        await ethers.provider.send("evm_mine", []);
+        await itemFactory.claim(deployer.address, 1111);
       });
     });
 
@@ -232,6 +245,36 @@ describe("Token", () => {
           "0x00",
           32
         )}`
+      );
+    });
+  });
+
+  describe("Milk", () => {
+    it("mint function check", async () => {
+      await milk.mint(addr1.address, 100);
+      expect(await milk.balanceOf(addr1.address)).to.be.equal(100);
+    });
+
+    it("withdraw function check", async () => {
+      await milk.mint(addr1.address, 100);
+      await milk.connect(addr1).withdraw(20);
+      expect(await milk.balanceOf(addr1.address)).to.be.equal(80);
+    });
+
+    it("mint should be reverted by non deployer", async () => {
+      await expect(
+        milk.connect(addr1).mint(addr1.address, 100)
+      ).to.be.revertedWith(
+        `AccessControl: account ${addr1.address.toLowerCase()} is missing role ${ethers.utils.hexZeroPad(
+          "0x00",
+          32
+        )}`
+      );
+    });
+
+    it("withdraw should be reverted if amount exceeds balance", async () => {
+      await expect(milk.connect(addr1).withdraw(20)).to.be.revertedWith(
+        "ERC20: burn amount exceeds balance"
       );
     });
   });
