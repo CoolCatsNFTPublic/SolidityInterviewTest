@@ -19,14 +19,16 @@ describe("Token", () => {
   let web3 = new Web3(<any>hre.network.provider);
   let itemFactory: ItemFactory;
   let milk: Milk;
-  let deployer: SignerWithAddress, addr1: SignerWithAddress;
+  let deployer: SignerWithAddress,
+    addr1: SignerWithAddress,
+    addr2: SignerWithAddress;
   let DEPOSITOR_ROLE: string,
     CONTRACT_ROLE: string,
     MASTER_ROLE: string,
     DEFAULT_ADMIN_ROLE = ethers.utils.hexZeroPad("0x00", 32);
 
   beforeEach(async () => {
-    [deployer, addr1] = await ethers.getSigners();
+    [deployer, addr1, addr2] = await ethers.getSigners();
     const ItemFactory_C = new ItemFactory__factory(deployer);
     itemFactory = await ItemFactory_C.deploy(deployer.address);
     const Milk_C = new Milk__factory(deployer);
@@ -250,18 +252,19 @@ describe("Token", () => {
   });
 
   describe("Milk", () => {
-    it("grantRole function check", async () => {
-      await milk.grantRole(MASTER_ROLE, deployer.address);
-    });
+    describe("grantRole feature", () => {
+      it("grantRole function check", async () => {
+        await milk.grantRole(MASTER_ROLE, deployer.address);
+      });
 
-    it("grantRole function restriction", async () => {
-      await expect(
-        milk.connect(addr1).grantRole(MASTER_ROLE, addr1.address)
-      ).to.be.revertedWith(
-        `AccessControl: account ${addr1.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
-      );
+      it("grantRole function restriction", async () => {
+        await expect(
+          milk.connect(addr1).grantRole(MASTER_ROLE, addr1.address)
+        ).to.be.revertedWith(
+          `AccessControl: account ${addr1.address.toLowerCase()} is missing role ${DEFAULT_ADMIN_ROLE}`
+        );
+      });
     });
-
     it("mint function check", async () => {
       await milk.grantRole(MASTER_ROLE, deployer.address);
       await milk.mint(addr1.address, 100);
@@ -286,5 +289,43 @@ describe("Token", () => {
         "ERC20: burn amount exceeds balance"
       );
     });
+
+    describe("deposit", async () => {
+      beforeEach(async () => {
+        await milk.grantRole(DEPOSITOR_ROLE, addr1.address);
+      });
+      it("deposit from depositor role", async function () {
+        await expect(
+          milk
+            .connect(addr1)
+            .deposit(
+              deployer.address,
+              web3.eth.abi.encodeParameters(["uint256"], [100])
+            )
+        )
+          .to.emit(milk, "Transfer")
+          .withArgs(ethers.constants.AddressZero, deployer.address, 100);
+      });
+      it("deposit from non-depositor role should fail", async function () {
+        await expect(
+          milk
+            .connect(addr2)
+            .deposit(
+              deployer.address,
+              web3.eth.abi.encodeParameters(["uint256"], [100])
+            )
+        ).to.be.revertedWith(
+          `AccessControl: account ${addr2.address.toLowerCase()} is missing role ${DEPOSITOR_ROLE}`
+        );
+      });
+    });
+
+    it("gameMint", async () => {});
+
+    it("gameBurn", async () => {});
+
+    it("gameTransferFrom", async () => {});
+
+    it("gameWithdraw", async () => {});
   });
 });
