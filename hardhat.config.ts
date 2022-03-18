@@ -2,14 +2,26 @@ import { config as dotEnvConfig } from "dotenv";
 dotEnvConfig();
 
 import { HardhatUserConfig } from "hardhat/types";
+import { task } from "hardhat/config";
 
 import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-web3";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-etherscan";
 import "solidity-coverage";
 import "hardhat-gas-reporter";
-import 'hardhat-deploy';
-import '@nomiclabs/hardhat-ethers';
+import "hardhat-deploy";
+import "@nomiclabs/hardhat-ethers";
+
+// This is a sample Hardhat task. To learn how to create your own go to
+// https://hardhat.org/guides/create-task.html
+task("accounts", "Prints the list of accounts", async (args, hre) => {
+  const accounts = await hre.ethers.getSigners();
+
+  for (const account of accounts) {
+    console.log(await account.address);
+  }
+});
 
 const INFURA_API_KEY = process.env.INFURA_API_KEY || "";
 const RINKEBY_PRIVATE_KEY =

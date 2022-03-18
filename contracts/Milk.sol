@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract Milk is ERC20, AccessControl {
-
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
     bytes32 public constant CONTRACT_ROLE = keccak256("CONTRACT_ROLE");
 
@@ -13,17 +12,9 @@ contract Milk is ERC20, AccessControl {
         string memory name,
         string memory symbol,
         address systemCheckerContractAddress
-    ) ERC20(name, symbol){
+    ) ERC20(name, symbol) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(CONTRACT_ROLE, systemCheckerContractAddress);
-    }
-
-    /// @notice called when grant the role to user
-    /// @dev Should be callable only by admin
-    /// @param role which role to give to this user
-    /// @param user user address for whom get this role
-    function grant(bytes32 role, address user) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setupRole(role, user);
     }
 
     /// @notice called when token is deposited on root chain
@@ -32,7 +23,10 @@ contract Milk is ERC20, AccessControl {
     /// Make sure minting is done only by this function
     /// @param user user address for whom deposit is being done
     /// @param depositData abi encoded amount
-    function deposit(address user, bytes calldata depositData) external onlyRole(DEPOSITOR_ROLE) {
+    function deposit(address user, bytes calldata depositData)
+        external
+        onlyRole(DEPOSITOR_ROLE)
+    {
         uint256 amount = abi.decode(depositData, (uint256));
         _mint(user, amount);
     }
@@ -46,7 +40,6 @@ contract Milk is ERC20, AccessControl {
         _burn(_msgSender(), amount);
     }
 
-
     /* TREASURY ROLES **/
     // Special role specifically for the treasury. This allows us to create a special relationship between
     // the treasury and Milk contract. Never know when you might need it :)
@@ -58,7 +51,10 @@ contract Milk is ERC20, AccessControl {
     /// @dev _burn() handles quantity check
     /// @param owner address of user withdrawing tokens
     /// @param amount amount of tokens to withdraw
-    function gameWithdraw(address owner, uint256 amount) external onlyRole(CONTRACT_ROLE) {
+    function gameWithdraw(address owner, uint256 amount)
+        external
+        onlyRole(CONTRACT_ROLE)
+    {
         _burn(owner, amount);
     }
 
@@ -82,7 +78,10 @@ contract Milk is ERC20, AccessControl {
     /// @dev on the Ethereum side. Contract will work but wallet is more versatile.
     /// @param owner Holder address to burn tokens of
     /// @param amount Amount of tokens to burn
-    function gameBurn(address owner, uint256 amount) external onlyRole(CONTRACT_ROLE) {
+    function gameBurn(address owner, uint256 amount)
+        external
+        onlyRole(CONTRACT_ROLE)
+    {
         _transfer(owner, address(this), amount);
         _burn(address(this), amount);
     }
@@ -92,10 +91,12 @@ contract Milk is ERC20, AccessControl {
     /// @dev Reserved for game generation of Gold via quests/battles/etc...
     /// @param to Address to mint to
     /// @param amount Amount of Gold to send - wei
-    function gameMint(address to, uint256 amount) external onlyRole(CONTRACT_ROLE) {
+    function gameMint(address to, uint256 amount)
+        external
+        onlyRole(CONTRACT_ROLE)
+    {
         _mint(to, amount);
     }
-
 
     /* MASTER ROLES **/
     // For ease of use and security we separate CONTRACT_ROLE from MASTER_ROLES
@@ -104,7 +105,10 @@ contract Milk is ERC20, AccessControl {
     /// @dev Designed for minting of initial token allocations
     /// @param account user for whom tokens are being minted
     /// @param amount amount of token to mint in wei
-    function mint(address account, uint256 amount) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function mint(address account, uint256 amount)
+        public
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         _mint(account, amount);
     }
 }
