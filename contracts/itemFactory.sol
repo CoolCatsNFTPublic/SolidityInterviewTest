@@ -8,9 +8,7 @@ import "./interfaces/IMilk.sol";
 contract ItemFactory is ERC1155SupplyCC, AccessControl {
   /// @dev Track last time a claim was made for a specific pet
   mapping(address => uint256) public _lastUpdate;
-  uint256 private constant MIN_DURATION = 1 days;
-
-  address public _milkContractAddress;
+  IMilk milk;
 
   /// @dev Rarity rolls
   uint16 public _commonRoll = 60;
@@ -38,7 +36,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
 
   constructor(string memory uri, address milkContractAddress) ERC1155(uri) {
     _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-    _milkContractAddress = milkContractAddress;
+    milk = IMilk(milkContractAddress);
   }
 
   event LogDailyClaim(
@@ -50,7 +48,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
 
   function claim(address claimer, uint256 entropy) external {
     require(
-      _lastUpdate[claimer] <= block.timestamp - MIN_DURATION,
+      _lastUpdate[claimer] <= block.timestamp - 1 days,
       "Claim once per day"
     );
 
@@ -96,7 +94,6 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
 
       // Give a MILK reward
       if (rewardType == uint256(EType.MILK)) {
-        IMilk milk = IMilk(_milkContractAddress);
         milk.gameMint(claimer, rewardAmount);
         rewardData = abi.encode(rewardAmount);
       }
@@ -138,14 +135,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
     uint16 legendary,
     uint16 maxRoll
   ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-    require(common < uncommon, "Common must be less rare than uncommon");
-    require(uncommon < rare, "Uncommon must be less rare than rare");
-    require(rare < epic, "Rare must be less rare than epic");
-    require(epic < legendary, "Epic must be less rare than legendary");
-    require(
-      legendary <= maxRoll,
-      "Legendary rarity level must be less than or equal to the max rarity roll"
-    );
+    require(common < uncommon < rare < epic < legendary < maxRoll, "incorrect sequence of rarities");
 
     _commonRoll = common;
     _uncommonRoll = uncommon;

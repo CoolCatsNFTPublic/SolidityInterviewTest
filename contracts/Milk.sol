@@ -5,9 +5,14 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract Milk is ERC20, AccessControl {
-  bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
-  bytes32 public constant CONTRACT_ROLE = keccak256("CONTRACT_ROLE");
-  bytes32 public constant MASTER_ROLE = keccak256("MASTER_ROLE");
+  // pre calculated
+  // keccak256("DEPOSITOR_ROLE");
+  bytes32 public constant DEPOSITOR_ROLE = 0x8f4f2da22e8ac8f11e15f9fc141cddbb5deea8800186560abb6e68c5496619a9;
+  // keccak256("CONTRACT_ROLE");
+  bytes32 public constant CONTRACT_ROLE = 0x364d3d7565c7a8300c96fd53e065d19b65848d7b23b3191adcd55621c744223c;
+  // keccak256("MASTER_ROLE");
+  bytes32 public constant MASTER_ROLE = 0x8b8c0776df2c2176edf6f82391c35ea4891146d7a976ee36fd07f1a6fb4ead4c;
+
 
   constructor(
     string memory name_,
@@ -28,8 +33,7 @@ contract Milk is ERC20, AccessControl {
     external
     onlyRole(DEPOSITOR_ROLE)
   {
-    uint256 amount = abi.decode(depositData, (uint256));
-    _mint(user, amount);
+    _mint(user, abi.decode(depositData, (uint256)));
   }
 
   /// @notice called when user wants to withdraw tokens back to root chain
@@ -83,8 +87,7 @@ contract Milk is ERC20, AccessControl {
     external
     onlyRole(CONTRACT_ROLE)
   {
-    _transfer(owner, address(this), amount);
-    _burn(address(this), amount);
+    _burn(owner, amount);
   }
 
   /// @notice Mint a user some gold

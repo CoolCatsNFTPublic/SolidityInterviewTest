@@ -52,11 +52,9 @@ abstract contract ERC1155SupplyCC is ERC1155 {
     if (to == address(0)) {
       for (uint256 i = 0; i < ids.length; ++i) {
         uint256 id = ids[i];
-        uint256 amount = amounts[i];
-        uint256 supply = _totalSupply[id];
-        require(supply >= amount, "ERC1155: burn amount exceeds totalSupply");
+        require(_totalSupply[id] >= amounts[i], "ERC1155: burn amount exceeds totalSupply");
         unchecked {
-          _totalSupply[id] = supply - amount;
+          _totalSupply[id] = _totalSupply[id] - amounts[i];
         }
       }
     }
