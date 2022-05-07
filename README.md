@@ -7,6 +7,8 @@ We have deliberately made some very silly mistakes and simple things like file n
 
 Why was this file used and not used directly from the OpenZeppling library?
 
+We use ERC1155SupplyCC in this contract because we override _beforeTokenTransfer function, and we want to run this code before any token transfer. So in super this function is empty and we need manually add the implementation
+
 ### Claim()
 
 Please adjust the claim function so that an address can only claim once per day.
