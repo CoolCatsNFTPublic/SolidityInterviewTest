@@ -7,11 +7,12 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 contract Milk is ERC20, AccessControl {
 
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
+    bytes32 public constant CONTRACT_ROLE = keccak256("CONTRACT_ROLE");
+    bytes32 public constant MASTER_ROLE = keccak256("MASTER_ROLE");
 
     constructor(
         string memory name,
-        string memory symbol,
-        address systemCheckerContractAddress
+        string memory symbol
     ) ERC20(name, symbol){
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
@@ -22,7 +23,7 @@ contract Milk is ERC20, AccessControl {
     /// Make sure minting is done only by this function
     /// @param user user address for whom deposit is being done
     /// @param depositData abi encoded amount
-    function deposit(address user, bytes calldata depositData) external override onlyRole(DEPOSITOR_ROLE) {
+    function deposit(address user, bytes calldata depositData) external onlyRole(DEPOSITOR_ROLE) {
         uint256 amount = abi.decode(depositData, (uint256));
         _mint(user, amount);
     }
