@@ -3,13 +3,25 @@ pragma solidity ^0.8.0;
 
 import "./common/ERC1155SupplyCC.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./Milk.sol";
 
 contract ItemFactory is ERC1155SupplyCC, AccessControl {
 
+    
     /// @dev Track last time a claim was made for a specific pet
     mapping(uint256 => uint256) public _lastUpdate;
+    
+    // @dev Track the last time an address made a claim
+    mapping(address => uint256) public _lastClaim;
+
+    //
+
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     address public _milkContractAddress;
+
+    // @dev Allowed time interval before a claim
+    uint256 public _allowedClaimInterval = 1 days;
 
     /// @dev Rarity rolls
     uint16 public _commonRoll = 60;
@@ -17,23 +29,37 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
     uint16 public _rareRoll = 90;
     uint16 public _epicRoll = 98;
     uint16 public _legendaryRoll = 100;
+    uint16 public _maxRarityRoll = 120;
 
     enum ERarity {
         COMMON, UNCOMMON, RARE, EPIC, LEGENDARY
     }
 
+    enum EType {
+        BOX, MILK
+    }
+
     /// @dev rewardType => (rewardRarity => data)
     mapping(uint256 => mapping(uint256 => bytes)) _rewardMapping;
 
-    constructor(string memory uri, address milkContractAddress) {
+    //emit LogDailyClaim(claimer, rewardType, rewardRarity, rewardData);
+    //address, uint256, uint256, bytes
+    event LogDailyClaim(address indexed claimer, uint256 indexed rewardType, uint256 rewardRarity, bytes rewardData);
+
+    constructor(string memory uri, address milkContractAddress) ERC1155(uri){
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _milkContractAddress = milkContractAddress;
     }
 
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, AccessControl) returns (bool) {
+        return super.supportsInterface(interfaceId);
+    }
+
     function claim(address claimer, uint256 entropy) external {
+        require((block.timestamp - _lastClaim[claimer]) >= _allowedClaimInterval, "claim: one claim per day allowed");
 
         // generate a single random number and bit shift as needed
-        uint256 randomNum = randomNum(entropy);
+        uint256 randomNum = generateRandomNumber(entropy);
 
         // roll and pick the rarity level of the reward
         uint256 randRarity = randomNum % _legendaryRoll;
@@ -65,7 +91,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
         else {
             // This will pick a random number between 0 and 1 inc.
             // MILK or ITEMS.
-            rewardType = randomNum(entropy) % uint256(EType.BOX);
+            rewardType = generateRandomNumber(entropy) % uint256(EType.BOX);
 
             // convert the reward mapping data to min and max
             (uint256 min, uint256 max, uint256[] memory ids) = abi.decode(
@@ -73,7 +99,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
             );
 
             // do some bit shifting magic to create random min max
-            uint256 rewardAmount = lootData.min + (randomNum(entropy)) % (lootData.max - lootData.min + 1);
+            uint256 rewardAmount = min + (generateRandomNumber(entropy)) % (max - min + 1);
 
             // Give a MILK reward
             if (rewardType == uint256(EType.MILK)) {
@@ -84,19 +110,24 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
 
             // Give an item reward
             else {
-                uint256 index = (randomNum(entropy)) % lootData.ids.length;
-                _mint(claimer, lootData.ids[index], rewardAmount, "");
-                rewardData = abi.encode(lootData.ids[index], rewardAmount);
+                uint256 index = (generateRandomNumber(entropy)) % ids.length;
+                _mint(claimer, ids[index], rewardAmount, "");
+                rewardData = abi.encode(ids[index], rewardAmount);
             }
         }
+        
+
+        // Update the last claim period for the address
+        _lastClaim[claimer] = block.timestamp;
+
+        // Claims are specific to the that pet, not the claimer or a combination of claimer and pet
+        _lastUpdate[rewardType] = block.timestamp;
 
         emit LogDailyClaim(claimer, rewardType, rewardRarity, rewardData);
 
-        // Claims are specific to the that pet, not the claimer or a combination of claimer and pet
-        _lastUpdate[petTokenId] = block.timestamp;
     }
 
-    function randomNum(uint entropy) internal returns (uint256) {
+    function generateRandomNumber(uint entropy) internal view returns (uint256) {
         return uint256(keccak256(abi.encode(block.timestamp, block.difficulty, entropy)));
     }
 
@@ -133,9 +164,9 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
     }
 
     function setReward(uint256 rewardType, uint256 rewardRarity, bytes calldata rewardData) external onlyRole(ADMIN_ROLE) {
-        (uint256 min, uint256 max, uint256[] memory ids) = abi.decode(
-            rewardData, (uint256, uint256, uint256[])
-        );
+        // (uint256 min, uint256 max, uint256[] memory ids) = abi.decode(
+        //     rewardData, (uint256, uint256, uint256[])
+        // );
         _rewardMapping[rewardType][rewardRarity] = rewardData;
     }
 }
