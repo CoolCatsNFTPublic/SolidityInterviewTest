@@ -1,11 +1,19 @@
 # Cool Cats Solidity Test
 
-This repo contains a number of mistakes and places where improvements can be made. Please made any adjustments you see fit.
+This repo contains a number of mistakes and places where improvements can be made. Please make any adjustments you see fit.
 We have deliberately made some very silly mistakes and simple things like file names might be wrong or inconsistent.
 
 ### ERC1155SupplyCC
 
-Why was this file used and not used directly from the OpenZeppling library?
+Why was this file used and not used directly from the OpenZeppelin library?
+
+**Answer**
+
+This is a customized contract has its own implemented extra features like:
+
+- mapping "\_totalSupply" which maps id to number of tokens.
+- "exists" function checks if the token exists given its id.
+- "\_beforeTokenTransfer" function has conditional statements to regulate the supply of tokens based on the address.
 
 ### Claim()
 
