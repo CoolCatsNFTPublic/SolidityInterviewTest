@@ -5,7 +5,7 @@ We have deliberately made some very silly mistakes and simple things like file n
 
 ### ERC1155SupplyCC
 
-Why was this file used and not used directly from the OpenZeppling library?
+Why was this file used and not used directly from the OpenZepplin library?
 
 ### Claim()
 
