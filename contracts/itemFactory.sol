@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.15;
 
 import "./common/ERC1155SupplyCC.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract ItemFactory is ERC1155SupplyCC, AccessControl {
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     /// @dev Track last time a claim was made for a specific pet
     mapping(uint256 => uint256) public _lastUpdate;
