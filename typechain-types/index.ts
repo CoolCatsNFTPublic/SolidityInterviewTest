@@ -16,6 +16,7 @@ export type { ERC1155SupplyCC } from "./ERC1155SupplyCC";
 export type { IMilk } from "./IMilk";
 export type { ItemFactory } from "./ItemFactory";
 export type { Milk } from "./Milk";
+export type { MockTestContract } from "./MockTestContract";
 
 export { AccessControl__factory } from "./factories/AccessControl__factory";
 export { IAccessControl__factory } from "./factories/IAccessControl__factory";
@@ -32,3 +33,4 @@ export { ERC1155SupplyCC__factory } from "./factories/ERC1155SupplyCC__factory";
 export { IMilk__factory } from "./factories/IMilk__factory";
 export { ItemFactory__factory } from "./factories/ItemFactory__factory";
 export { Milk__factory } from "./factories/Milk__factory";
+export { MockTestContract__factory } from "./factories/MockTestContract__factory";

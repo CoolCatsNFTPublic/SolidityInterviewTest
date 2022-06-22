@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.4;
 
 import "./common/ERC1155SupplyCC.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -28,17 +28,17 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
     }
 
     enum EType {
-        BOX, MILK
+        DEFAULT, BOX, MILK
     }
 
     /// @dev rewardType => (rewardRarity => data)
-    mapping(uint256 => mapping(uint256 => bytes)) _rewardMapping;
+    mapping(uint256 => mapping(uint256 => bytes)) public _rewardMapping;
 
     event LogDailyClaim(address indexed claimer, uint256 indexed rewardType, uint256 indexed rewardRarity, bytes rewardData);
 
-    constructor(string memory uri, address milkContractAddress) ERC1155(uri) {
+    constructor(string memory uri) ERC1155(uri) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _milkContractAddress = milkContractAddress;
+        _setupRole(ADMIN_ROLE, _msgSender());
     }
 
     function claim(address claimer, uint256 entropy) external {
@@ -52,7 +52,7 @@ contract ItemFactory is ERC1155SupplyCC, AccessControl {
         uint256 randomNum = generateRandomNumber(entropy);
 
         // roll and pick the rarity level of the reward
-        uint256 randRarity = randomNum % _legendaryRoll;
+        uint256 randRarity = randomNum % _legendaryRoll + 1;
         uint256 rewardRarity;
         bytes memory rewardData;
         uint256 rewardType = uint256(EType.BOX);

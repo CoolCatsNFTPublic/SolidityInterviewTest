@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.4;
 
 interface IMilk {
     function deposit(address user, bytes calldata depositData) external;
