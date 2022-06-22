@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./Interfaces.sol";
 
-contract Milk is ERC20, AccessControl {
-
+contract Milk is IMilk, ERC20, AccessControl {
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
+    bytes32 public constant CONTRACT_ROLE = keccak256("CONTRACT_ROLE");
+    bytes32 public constant MASTER_ROLE = keccak256("MASTER_ROLE");
 
     constructor(
         string memory name,
@@ -14,6 +16,7 @@ contract Milk is ERC20, AccessControl {
         address systemCheckerContractAddress
     ) ERC20(name, symbol){
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _setupRole(CONTRACT_ROLE, systemCheckerContractAddress);
     }
 
     /// @notice called when token is deposited on root chain
@@ -32,7 +35,7 @@ contract Milk is ERC20, AccessControl {
     /// @dev external with no role to allow users requesting withdraw of token when not part of game
     /// @dev _burn() handles quantity check
     /// @param amount amount of tokens to withdraw
-    function withdraw(uint256 amount) external {
+    function withdraw(uint256 amount) external override {
         _burn(_msgSender(), amount);
     }
 
@@ -48,7 +51,7 @@ contract Milk is ERC20, AccessControl {
     /// @dev _burn() handles quantity check
     /// @param owner address of user withdrawing tokens
     /// @param amount amount of tokens to withdraw
-    function gameWithdraw(address owner, uint256 amount) external onlyRole(CONTRACT_ROLE) {
+    function gameWithdraw(address owner, uint256 amount) external override onlyRole(CONTRACT_ROLE) {
         _burn(owner, amount);
     }
 
@@ -61,7 +64,7 @@ contract Milk is ERC20, AccessControl {
         address sender,
         address recipient,
         uint256 amount
-    ) external onlyRole(CONTRACT_ROLE) {
+    ) external override onlyRole(CONTRACT_ROLE) {
         _transfer(sender, recipient, amount);
     }
 
@@ -72,7 +75,7 @@ contract Milk is ERC20, AccessControl {
     /// @dev on the Ethereum side. Contract will work but wallet is more versatile.
     /// @param owner Holder address to burn tokens of
     /// @param amount Amount of tokens to burn
-    function gameBurn(address owner, uint256 amount) external onlyRole(CONTRACT_ROLE) {
+    function gameBurn(address owner, uint256 amount) external override onlyRole(CONTRACT_ROLE) {
         _transfer(owner, address(this), amount);
         _burn(address(this), amount);
     }
@@ -82,7 +85,7 @@ contract Milk is ERC20, AccessControl {
     /// @dev Reserved for game generation of Gold via quests/battles/etc...
     /// @param to Address to mint to
     /// @param amount Amount of Gold to send - wei
-    function gameMint(address to, uint256 amount) external onlyRole(CONTRACT_ROLE) {
+    function gameMint(address to, uint256 amount) external override onlyRole(CONTRACT_ROLE) {
         _mint(to, amount);
     }
 
@@ -94,7 +97,7 @@ contract Milk is ERC20, AccessControl {
     /// @dev Designed for minting of initial token allocations
     /// @param account user for whom tokens are being minted
     /// @param amount amount of token to mint in wei
-    function mint(address account, uint256 amount) public onlyRole(MASTER_ROLE) {
+    function mint(address account, uint256 amount) public override onlyRole(MASTER_ROLE) {
         _mint(account, amount);
     }
 }

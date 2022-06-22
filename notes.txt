@@ -1,0 +1,27 @@
+### ERC1155SupplyCC
+
+Why was this file used and not used directly from the OpenZepplin library?
+
+Solution - This file is used to extend the ERC1155 smart contract with functionality
+used to determine the total supply of a token id. This is useful where a mix of 
+NFTs and Fungible tokens are to be created using the ERC1155 smart contract. While a totalSupply of 1 might mean the 
+corresponding is an NFT, there is no guarantees that no other token with the
+same id are not going to be minted.
+
+### Claim()
+
+Please adjust the claim function so that an address can only claim once per day.
+
+Solution - resolved within smart contract code
+
+## Unit Tests
+
+At Cool Cats we write unit tests for 100% coverage and for as many edge cases as we can think of. Please do the same here.
+
+Solution - added unit tests to cover all function including a MockTestContracts.sol to test the CONTRACT_ROLE role in Milk.sol. 
+
+## Deployment Script/Task
+
+Please create a deployment script or task. Which ever you feel is most appropriate
+
+- Solution created deployment script which can be ran with the command - npx hardhat run scripts/deploy.ts
