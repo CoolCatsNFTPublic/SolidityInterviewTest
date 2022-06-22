@@ -1,4 +1,3 @@
-
 ### ERC1155SupplyCC
 
 Why was this file used and not used directly from the OpenZepplin library?
@@ -19,6 +18,10 @@ Solution - resolved within smart contract code
 
 At Cool Cats we write unit tests for 100% coverage and for as many edge cases as we can think of. Please do the same here.
 
+Solution - added unit tests to cover all function including a MockTestContracts.sol to test the CONTRACT_ROLE role in Milk.sol. 
+
 ## Deployment Script/Task
 
 Please create a deployment script or task. Which ever you feel is most appropriate
+
+- Solution created deployment script which can be ran with the command - npx hardhat run scripts/deploy.ts
